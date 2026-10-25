@@ -1,0 +1,7 @@
+numpy
+scipy
+matplotlib
+pyyaml
+pandas
+# optional, recommended aero backend (fast XFOIL-like surrogate):
+# neuralfoil

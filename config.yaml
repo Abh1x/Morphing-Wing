@@ -1,0 +1,85 @@
+# =====================================================================
+# MORPHING RIB - PROJECT CONFIG TEMPLATE
+# Every value marked  # TODO  is a placeholder: replace with YOUR number.
+# Values marked (suggested) are starting points, not verified results.
+# =====================================================================
+
+project:
+  title: "OptiMorph - Optimization-Driven Adaptive Morphing Wing Rib"
+  team_id: "TODO"
+  aero_backend: "auto"        # auto | xfoil | neuralfoil | surrogate
+  xfoil_path: "xfoil"         # path to xfoil executable if backend = xfoil
+
+# ---- USE-CASE AIRCRAFT (end product the rib will integrate into) ----
+aircraft:
+  mtow_kg: 1.6                # (suggested) TODO confirm
+  span_m: 1.1                 # (suggested) TODO
+  chord_root_m: 0.16          # (suggested) TODO
+  chord_tip_m: 0.16           # (suggested) TODO
+  altitude_m: 0               # ISA altitude for density / viscosity
+  cl_max_clean: 1.7           # (suggested) TODO from XFLR5 3D analysis
+
+# ---- BASELINE (FIXED) AIRFOIL ----
+airfoil:
+  name: "GOE 239"             # label used in plots
+  dat_file: "airfoils/goe239.dat"   # TODO put the Selig-format coordinates file here
+                                    # (leave "" to use the NACA code below instead)
+  naca: "2412"                # only used when dat_file is ""
+  n_points: 161               # points per surface
+
+# ---- FLIGHT CONDITIONS the optimizer will serve ----
+# V in m/s, n = load factor. Required CL is computed from weight, V, n.
+flight_conditions:
+  - {name: "Climb / Loiter", V: 12.0, n: 1.0}   # (suggested) TODO
+  - {name: "Cruise",         V: 15.0, n: 1.0}   # (suggested) TODO
+  - {name: "Dash",           V: 18.0, n: 1.0}   # (suggested) TODO
+  - {name: "Maneuver (n=2)", V: 16.0, n: 2.0}   # (suggested) TODO
+
+# ---- MORPHING PARAMETRIZATION (2 design variables) ----
+# TE displacement d = delta * chord (positive = downward camber increase).
+# Shape exponent p controls where bending concentrates (p=2 gentle arc,
+# larger p = bending pushed toward the trailing edge).
+morphing:
+  x_start: 0.60               # TODO morph zone starts at this x/c (rib flexure start)
+  delta_min: -0.03            # TODO TE displacement / chord (up)
+  delta_max:  0.04            # TODO TE displacement / chord (down)
+  p_min: 2.0
+  p_max: 4.0
+
+# ---- THICKNESS MORPHING (3rd design variable, tau) ----
+# h(x) -> h(x) * (1 + tau * w(x)),  h = local half-thickness.
+#   mode "bump"  : w = sin^2 bump over [x_start, x_end] (local change, LE and TE untouched)
+#   mode "global": w = 1 (uniform scaling of the whole thickness distribution)
+# Set enabled: false to run camber-only.
+thickness:
+  enabled: true
+  mode: "bump"
+  x_start: 0.20               # TODO window start (x/c) - where your thickness mechanism acts
+  x_end: 0.80                 # TODO window end (x/c)
+  tau_min: -0.10              # TODO relative thickness change at window peak (-10 %)
+  tau_max:  0.10              # TODO (+10 %)
+
+# ---- MECHANISM / ACTUATION (fill from CAD kinematics + datasheet) ----
+mechanism:
+  actuator_stroke_mm: 12.0    # TODO linkage stroke available
+  actuator_torque_kgcm: 0.0   # TODO servo rated torque (kg.cm)
+  # Map: TE displacement -> actuator command. Replace with CAD/measured table.
+  # Linear placeholder: stroke_mm = k * delta * chord_m * 1000
+  k_stroke_per_delta: 0.0     # TODO calibrate (0 = not yet calibrated)
+  thickness_actuator_stroke_mm: 6.0   # TODO stroke available for the thickness mechanism
+  k_thickness_stroke: 0.0     # TODO calibrate (0 = placeholder 1:1: stroke = max local thickness change)
+  rib_chord_m: 0.25           # TODO prototype section chord
+
+# ---- STRUCTURAL / SKIN LIMITS ----
+constraints:
+  max_skin_strain: 0.03       # TODO from skin material datasheet (e.g. TPU/silicone)
+  max_cm_magnitude: 0.12      # TODO pitching moment limit (optional)
+  alpha_range_deg: [-4.0, 12.0]
+  hardware_zone: [0.25, 0.55] # TODO x/c range where spar / flexures / actuators must fit
+  min_tc_in_zone: 0.0         # TODO minimum local t/c inside hardware_zone (0 = check off)
+  max_tc: 0.0                 # TODO maximum allowed t/c, e.g. for drag or spar limit (0 = check off)
+
+# ---- OUTPUT ----
+output:
+  results_dir: "results"
+  figures_dir: "figures"
